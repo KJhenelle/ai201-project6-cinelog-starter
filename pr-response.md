@@ -88,4 +88,47 @@ The UUID change also left two stale references in the watchlist code that git co
 ![git log --oneline output showing the cleaned-up commit history](Screenshot.png)
 
 ## PR Description
-<!-- Written at the end — feature overview, design decisions, manual testing steps -->
+### feat: add watchlist feature
+
+**What it does**
+Adds a watchlist so users can save films they want to watch later, separate from their collection (films already watched).
+- `WatchlistEntry` model (`user_id`, `film_id`, `date_added`, `public`).
+- `services/watchlist_service.py` with `add_to_watchlist()` and `get_watchlist()`.
+- Endpoints, registered under `/watchlist`:
+  - `POST /watchlist/<user_id>/add` with body `{"film_id": "<uuid>"}` returns the new entry (201).
+  - `GET /watchlist/<user_id>` returns the user's watchlist as film dicts with `date_added` and `public`.
+
+**Changes made in response to review**
+- Renamed `save_to_watchlist()` to `add_to_watchlist()` to match `add_to_collection()`, and updated the call site.
+- Added a duplicate check that follows `add_to_collection()`: it looks for an existing entry with the same `user_id` and `film_id` and raises `AlreadyInWatchlistError`.
+- Added a test for a nonexistent `film_id`, modeled on `test_add_to_collection_nonexistent_film_raises`.
+- Rebased on `main` after the integer-to-UUID film ID migration, and updated the remaining integer references.
+
+**Design decisions**
+- **Visibility default: `public=True`.** Public lists let users find recommendations and compare taste, which is most of the value of a film-logging site. There is also no endpoint to toggle `public` yet, so a private default would mean no list could ever be shared. The tradeoff is that users who don't notice the setting expose their viewing interests. See Comment 4 above.
+- **Sort order: date added is recommended, but `get_watchlist()` still sorts alphabetically by title in this PR.** I agree newest-first better fits how people use a watchlist, and I'd switch it to `date_added` descending, as `get_collection()` does. See Comment 5 above.
+
+**How to test manually**
+1. Install dependencies and seed the database:
+   ```
+   pip install -r requirements.txt
+   python seed.py
+   ```
+   Note the `user_id` that `seed.py` prints.
+2. Start the app: `python app.py` (it runs at http://127.0.0.1:5000).
+3. Get a film ID: `curl http://127.0.0.1:5000/films/` and copy an `id` from the response.
+4. Add it to the watchlist:
+   ```
+   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_id>"}'
+   ```
+   Expect a 201 and a JSON entry with `"public": true`.
+5. View the watchlist: `curl http://127.0.0.1:5000/watchlist/<user_id>`. Expect the film with `date_added` and `public`.
+6. Run the tests: `pytest tests/ -v` (5 passing).
+
+**Known limitations**
+- `routes/watchlist/watchlist.py` doesn't catch `AlreadyInWatchlistError` or `FilmNotFoundError`, so a duplicate add or a nonexistent film returns a 500 instead of 409 or 404.
+- `WatchlistEntry` has no unique constraint on (`user_id`, `film_id`), unlike `CollectionEntry`, so the duplicate check is service-level only.
+- The `public` flag isn't enforced when reading, there's no way to toggle it, and the endpoints have no authentication.
+- The duplicate check has no test yet.
