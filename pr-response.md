@@ -68,8 +68,19 @@ a timeline of watched media is more useful to users as it will show recently wat
 i agree because most people looking at reviews for movies are more than likely going to see a new movie and most people watch new movies when they release or around that time keeping it optimzed for the most likelyuse case of the app
 ## Comment 6 — Rebase
 **What conflicted:**
+`main` gained one commit since this branch was created, `57ec3f9` ("refactor: migrate film IDs from integer to UUID"). It only touched `models.py`, changing `Film.id` and every `film_id` foreign key from `db.Integer` to `db.String(36)`. Running `git rebase origin/main` stopped on my first commit (`9eafe68`, which added the watchlist model) with a conflict in `models.py` on one line, `WatchlistEntry.film_id`. Main changed its type to `String(36)`. My commit had added `index=True` to the same line and still used `db.Integer`. The other six commits replayed without conflicts.
+
+The UUID change also left two stale references in the watchlist code that git couldn't flag, because main never touched those files: the `add_to_watchlist` docstring said `film_id (int)… pre-refactor`, and the route docstring said `Body: { "film_id": <int> }`.
 **How I resolved it:**
+- **`models.py`:** I kept both changes, so the line is now `film_id = db.Column(db.String(36), db.ForeignKey("film.id"), nullable=False, index=True)`. That is main's UUID type plus my `index=True`. I then ran `git add models.py` and `git rebase --continue`.
+- **Docstrings:** After the rebase finished, I updated the two stale references to say `film_id (str): UUID of the film.` and `Body: { "film_id": "<uuid>" }`. I committed these separately as `fix: update watchlist film_id docs to UUID after main branch refactor`, so the UUID update shows up in the history.
+- **First attempt:** I started this rebase once earlier, then ran `git rebase --abort` because I was working out of order (Comments 4 and 5 weren't finalized). The abort restored the branch exactly, and I redid the rebase afterward.
 **How I verified no conflict remains:**
+- Searched `models.py` for conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) and found none.
+- `git log --merges origin/main..HEAD` returned no commits, so the history has no merge commits.
+- Searched the watchlist files and `models.py` for `int`, `integer`, `pre-refactor` and `<int>`. The only matches left are comments about the migration and unrelated `db.Integer` columns (`year`, `rating`).
+- Ran `pytest tests/ -v` after the rebase: 5 passed.
+- Limit: the tests don't exercise the watchlist route or a real film with a UUID, so I haven't confirmed that adding a real film to a watchlist works end to end.
 
 ## PR Description
 <!-- Written at the end — feature overview, design decisions, manual testing steps -->
