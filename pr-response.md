@@ -5,7 +5,9 @@
 
 ## Comment 1 — Rename
 **What I did:**
+updated all instances of save_to_watchlist to add_to_watchlist
 **How I verified:**
+i used ctrl+f to find all instances of save_to_watchlist replaced them with  add_to_watchlist then asked claude to verify there were no missed lines
 
 ## Comment 2 — Deduplication
 **What I did:**
