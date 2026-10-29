@@ -82,5 +82,10 @@ The UUID change also left two stale references in the watchlist code that git co
 - Ran `pytest tests/ -v` after the rebase: 5 passed.
 - Limit: the tests don't exercise the watchlist route or a real film with a UUID, so I haven't confirmed that adding a real film to a watchlist works end to end.
 
+## Commit History
+`git log --oneline` after cleaning up the history (conventional commit messages, no merge commits, rebased on `main`):
+
+![git log --oneline output showing the cleaned-up commit history](Screenshot.png)
+
 ## PR Description
 <!-- Written at the end — feature overview, design decisions, manual testing steps -->
