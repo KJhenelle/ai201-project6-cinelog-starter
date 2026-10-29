@@ -1,7 +1,19 @@
 # PR Response Doc — CineLog Watchlist Feature
 
 ## AI Usage
-<!-- Fill in at the end — how you used AI tools during this project -->
+I used Claude Code throughout this project:
+- **Orientation:** I had it read `models.py`, `services/collection_service.py` and `tests/test_collection.py` and summarize the naming conventions, how deduplication is handled, and how the tests are structured. I checked the summary against the files.
+- **PR review comments:** It read the PR on GitHub and summarized the six comments. I read the comments myself as well.
+- **Comment 1:** I made the rename, then asked it to search the repo for leftovers. It found a stale `save_to_watchlist` import in `routes/watchlist/watchlist.py` that I had missed, and removed it.
+- **Comment 3:** Claude wrote `tests/test_watchlist.py` from the pattern in `test_add_to_collection_nonexistent_film_raises` and ran the suite.
+- **Comments 4 and 5:** I wrote my own positions and reasoning. For Comment 4 I asked it to list tradeoffs of `public=True` versus `public=False`. After writing my drafts for both comments, I asked it to play devil's advocate. It pointed out these gaps:
+  - `public` isn't enforced anywhere.
+  - There's no endpoint to toggle it.
+  - My Comment 5 reasoning described a list of watched films, but a watchlist holds films not yet watched.
+  - My "Engagement with reviewer's point" section for Comment 5 was empty.
+
+  What I changed in my responses as a result: i switched from thinking private as a default is better to public as a default
+- **Tools:** The terminal runs were done through Claude Code, and I ran `pytest` myself too.
 
 ## Comment 1 — Rename
 **What I did:**
@@ -41,14 +53,19 @@ Ran `pytest tests/test_watchlist.py -v` (1 passed), then `pytest tests/ -v` (5 p
 
 ## Comment 4 — Default visibility
 **My position:**
+Watchlists should default to public=True
 **Reasoning:**
+There's no endpoint to toggle public. A private default with no toggle means no list can ever be shared
+Public lists let users find recommendations and compare taste, which is most of the value of a film-logging site which is likely what they were optimizing for.
 **Tradeoff acknowledged:**
-
+Users who don't notice the setting expose their viewing interests. Those can be sensitive,
 ## Comment 5 — Sort order
 **My position:**
+i recommend watchlist should be sorted by date added 
 **Reasoning:**
+a timeline of watched media is more useful to users as it will show recently watched and allows for comparison with recent releases
 **Engagement with reviewer's point:**
-
+i agree because most people looking at reviews for movies are more than likely going to see a new movie and most people watch new movies when they release or around that time keeping it optimzed for the most likelyuse case of the app
 ## Comment 6 — Rebase
 **What conflicted:**
 **How I resolved it:**
